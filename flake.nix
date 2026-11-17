@@ -12,12 +12,28 @@
   };
 
   outputs = { self, nixpkgs, flake-utils, rust-overlay, dull-nix }:
-    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
+    let
+      pkgsFor = system: import nixpkgs {
+        inherit system;
+        overlays = [ rust-overlay.overlays.default dull-nix.overlays.default ];
+      };
+
+      releaseTools = flake-utils.lib.eachDefaultSystem (system:
+        let pkgs = pkgsFor system; in
+        {
+          packages = {
+            release = pkgs.mkReleaseCommand {
+              repositoryUrl = "https://github.com/lakinwecker/wokesy";
+              hooks = ./ci/release-hooks.sh;
+              releaseWorkflow = "release.yml";
+            };
+            release-guards = pkgs.releaseGuards;
+          };
+        });
+
+      image = flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ rust-overlay.overlays.default dull-nix.overlays.default ];
-        };
+        pkgs = pkgsFor system;
         inherit (pkgs) lib;
 
         toolchain = pkgs.rust-bin.stable.latest.default;
@@ -77,12 +93,8 @@
         packages = {
           inherit wokesy container;
           default = container;
-          release = pkgs.mkReleaseCommand {
-            repositoryUrl = "https://github.com/lakinwecker/wokesy";
-            hooks = ./ci/release-hooks.sh;
-            releaseWorkflow = "release.yml";
-          };
-          release-guards = pkgs.releaseGuards;
         };
       });
+    in
+    nixpkgs.lib.recursiveUpdate releaseTools image;
 }
