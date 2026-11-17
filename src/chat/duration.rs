@@ -39,7 +39,7 @@ const YEAR: Unit = Unit {
 };
 const EVERY_UNIT: [Unit; 6] = [YEAR, MONTH, WEEK, DAY, HOUR, MINUTE];
 const EXACT_UNITS: [Unit; 3] = [DAY, HOUR, MINUTE];
-const HALF_A_MINUTE: u64 = MINUTE.seconds / 2;
+const WRITTEN_LATE_BY: u64 = 90;
 const BETWEEN_UNITS: &str = " ";
 
 impl Unit {
@@ -84,9 +84,10 @@ pub fn in_words(lasting: Duration) -> String {
 ///
 /// let hours = |hours: u64| Duration::from_secs(hours * 60 * 60);
 ///
-/// assert_eq!(in_one_unit(Duration::from_secs(45 * 60)), "45 minutes");
-/// assert_eq!(in_one_unit(hours(4) - Duration::from_secs(2)), "4 hours");
-/// assert_eq!(in_one_unit(hours(4) + Duration::from_secs(59 * 60)), "4 hours");
+/// assert_eq!(in_one_unit(Duration::from_secs(44 * 60)), "45 minutes");
+/// assert_eq!(in_one_unit(hours(3) - Duration::from_secs(90)), "3 hours");
+/// assert_eq!(in_one_unit(hours(3) - Duration::from_secs(91)), "2 hours");
+/// assert_eq!(in_one_unit(hours(4) + Duration::from_secs(58 * 60)), "4 hours");
 /// assert_eq!(in_one_unit(hours(3 * 24)), "3 days");
 /// assert_eq!(in_one_unit(hours(15 * 24)), "2 weeks");
 /// assert_eq!(in_one_unit(hours(100 * 24)), "3 months");
@@ -95,7 +96,7 @@ pub fn in_words(lasting: Duration) -> String {
 /// ```
 #[must_use]
 pub fn in_one_unit(lasting: Duration) -> String {
-    let seconds = lasting.as_secs().saturating_add(HALF_A_MINUTE);
+    let seconds = lasting.as_secs().saturating_add(WRITTEN_LATE_BY);
     EVERY_UNIT
         .into_iter()
         .find(|unit| seconds >= unit.seconds)
