@@ -4,6 +4,12 @@ Rendered by [git-cliff](https://git-cliff.org) from the conventional commits
 behind each tag. `release` rewrites this file in full on every release, so an
 edit made here is lost — edit the commit messages instead.
 
+## v0.4.1 — 2026-11-17
+
+### Tooling
+
+- **deploy**: deploy production 0.4.0 ([100923f](https://github.com/lakinwecker/wokesy/commit/100923f2b7931a0515c450b3c4e856bc89d2acb4))
+
 ## v0.4.0 — 2026-11-15
 
 ### Features
