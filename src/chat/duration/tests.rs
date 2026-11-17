@@ -7,27 +7,27 @@ const A_DAY: u64 = 24 * AN_HOUR;
 #[test]
 fn time_left_is_told_in_the_largest_unit_that_fits_rounded_down() {
     for (seconds, told) in [
-        (A_MINUTE, "1 minute"),
-        (2 * A_MINUTE, "2 minutes"),
-        (45 * A_MINUTE, "45 minutes"),
-        (59 * A_MINUTE, "59 minutes"),
+        (A_MINUTE, "2 minutes"),
+        (2 * A_MINUTE, "3 minutes"),
+        (45 * A_MINUTE, "46 minutes"),
+        (58 * A_MINUTE, "59 minutes"),
         (AN_HOUR, "1 hour"),
-        (2 * AN_HOUR - A_MINUTE, "1 hour"),
+        (2 * AN_HOUR - 2 * A_MINUTE, "1 hour"),
         (2 * AN_HOUR, "2 hours"),
         (18 * AN_HOUR, "18 hours"),
-        (A_DAY - A_MINUTE, "23 hours"),
+        (A_DAY - 2 * A_MINUTE, "23 hours"),
         (A_DAY, "1 day"),
-        (2 * A_DAY - A_MINUTE, "1 day"),
+        (2 * A_DAY - 2 * A_MINUTE, "1 day"),
         (3 * A_DAY, "3 days"),
-        (7 * A_DAY - A_MINUTE, "6 days"),
+        (7 * A_DAY - 2 * A_MINUTE, "6 days"),
         (7 * A_DAY, "1 week"),
         (14 * A_DAY, "2 weeks"),
-        (30 * A_DAY - A_MINUTE, "4 weeks"),
+        (30 * A_DAY - 2 * A_MINUTE, "4 weeks"),
         (30 * A_DAY, "1 month"),
         (90 * A_DAY, "3 months"),
-        (365 * A_DAY - A_MINUTE, "12 months"),
+        (365 * A_DAY - 2 * A_MINUTE, "12 months"),
         (365 * A_DAY, "1 year"),
-        (730 * A_DAY - A_MINUTE, "1 year"),
+        (730 * A_DAY - 2 * A_MINUTE, "1 year"),
         (730 * A_DAY, "2 years"),
     ] {
         assert_eq!(in_one_unit(Duration::from_secs(seconds)), told, "{seconds}");
@@ -35,13 +35,13 @@ fn time_left_is_told_in_the_largest_unit_that_fits_rounded_down() {
 }
 
 #[test]
-fn time_left_is_counted_to_the_nearest_minute_before_it_is_rounded_down() {
+fn time_left_is_counted_as_if_the_message_was_written_up_to_90_seconds_late() {
     for (seconds, told) in [
         (4 * AN_HOUR - 1, "4 hours"),
-        (4 * AN_HOUR - 30, "4 hours"),
-        (4 * AN_HOUR - 31, "3 hours"),
-        (59 * A_MINUTE + 29, "59 minutes"),
-        (59 * A_MINUTE + 30, "1 hour"),
+        (4 * AN_HOUR - 90, "4 hours"),
+        (4 * AN_HOUR - 91, "3 hours"),
+        (58 * A_MINUTE + 29, "59 minutes"),
+        (58 * A_MINUTE + 30, "1 hour"),
         (7 * A_DAY - 1, "1 week"),
     ] {
         assert_eq!(in_one_unit(Duration::from_secs(seconds)), told, "{seconds}");
@@ -50,7 +50,7 @@ fn time_left_is_counted_to_the_nearest_minute_before_it_is_rounded_down() {
 
 #[test]
 fn time_left_is_never_told_as_less_than_a_minute() {
-    for seconds in [0, 1, 29, 30, 89] {
+    for seconds in [0, 1, 29] {
         assert_eq!(
             in_one_unit(Duration::from_secs(seconds)),
             "1 minute",
