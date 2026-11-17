@@ -2,7 +2,12 @@ use time::macros::datetime;
 
 use super::*;
 use crate::on_call::changes::changes;
-use crate::on_call::testing::{directory, level, policy, roster, shift, user};
+use tokio::time::Instant;
+
+use crate::chat::{ChannelName, MessageId, TopicName};
+use crate::on_call::Level;
+use crate::on_call::testing::{directory, level, policy, roster, schedule, shift, user};
+use crate::pagerduty::ScheduleId;
 
 const NOW: OffsetDateTime = datetime!(2026-11-14 16:00 UTC);
 
@@ -43,6 +48,7 @@ fn changed(announced: &Roster, latest: &Roster) -> String {
         &changes(announced, latest),
         latest,
         &alice_and_bob_in_chat(),
+        &[],
         NOW,
     )
 }
@@ -360,6 +366,69 @@ fn a_change_from_nobody_and_a_change_to_nobody_say_so() {
 **Lichess · Level 2**
 - nobody
 - was: @_**|13**
+```"
+    );
+}
+
+fn asked(user: &UserRef, schedule: &str, message: u64) -> Asked {
+    Asked {
+        user: user.id.clone(),
+        schedule: ScheduleId::try_new(schedule).unwrap(),
+        in_message: MessageLink {
+            channel: ChannelName::try_new("sysadmin").unwrap(),
+            topic: TopicName::try_new("incident").unwrap(),
+            id: MessageId(message),
+        },
+        until: Instant::now(),
+    }
+}
+
+#[test]
+fn a_person_newly_on_call_on_a_schedule_they_asked_for_is_linked_to_the_message_that_asked() {
+    let on_the_primary_rota = |shifts: &[Shift]| Level {
+        schedules: vec![schedule("PPRIMAR", "Primary rota")],
+        ..level(1, shifts)
+    };
+    let announced = roster(&[policy(
+        "PLICHES",
+        "Lichess",
+        &[on_the_primary_rota(&[open_ended(bob())]), level(2, &[])],
+    )]);
+    let latest = roster(&[policy(
+        "PLICHES",
+        "Lichess",
+        &[
+            on_the_primary_rota(&[until_the_evening(alice()), open_ended(bob())]),
+            level(2, &[open_ended(carol())]),
+        ],
+    )]);
+    let asked = [
+        asked(&alice(), "PPRIMAR", 41),
+        asked(&alice(), "PPRIMAR", 42),
+        asked(&bob(), "PPRIMAR", 43),
+        asked(&carol(), "PPRIMAR", 44),
+    ];
+
+    assert_eq!(
+        on_call_changed(
+            &changes(&announced, &latest),
+            &latest,
+            &alice_and_bob_in_chat(),
+            &asked,
+            NOW,
+        ),
+        "\
+:pager: **On call changed:** @_**|12** for 4 hours, @_**|13**
+
+```spoiler changes
+**Lichess · Level 1**
+- @_**|12** until <time:2026-11-14T20:00:00Z>, from #**sysadmin>incident@42**
+- @_**|13**
+- was: @_**|13**
+
+**Lichess · Level 2**
+- Carol Example
+- was: nobody
 ```"
     );
 }

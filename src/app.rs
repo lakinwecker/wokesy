@@ -148,6 +148,7 @@ impl Jobs {
             directories.clone(),
             Arc::clone(&refresh),
         );
+        let asked = commands.asked();
         Self {
             health: tokio::spawn(health::keep_checking(
                 config.health,
@@ -172,6 +173,7 @@ impl Jobs {
                 announcements.clone(),
                 rosters,
                 directories,
+                asked,
             )),
             inbox: tokio::spawn(zulip::keep_reading(
                 zulip,

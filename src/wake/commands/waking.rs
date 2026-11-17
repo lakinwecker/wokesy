@@ -8,7 +8,7 @@ use tokio::time::Instant;
 use super::backup::backup;
 use super::own_changes::{Kind, Made, OwnChange, WakeSchedule};
 use super::{Commands, FIRST_LINE, Reply, UNKNOWN_SENDER};
-use crate::chat::{ChatUserId, in_words, time_tag};
+use crate::chat::{ChatUserId, IncomingMessage, in_words, time_tag};
 use crate::on_call::{Level, Policy, Roster, name_in_chat, policy_in_chat};
 use crate::pagerduty::{self, ApiError, ScheduleId, ScheduleName, UserId};
 use crate::people::Directory;
@@ -43,11 +43,12 @@ impl Stint {
 impl Commands {
     pub(super) async fn wake(
         &mut self,
-        sender: ChatUserId,
+        message: &IncomingMessage,
         lasting: Option<Duration>,
         roster: &Roster,
         directory: &Directory,
     ) -> Reply {
+        let sender = message.sender;
         let Some(user) = directory.pagerduty_user_of(sender) else {
             return Reply::message(UNKNOWN_SENDER);
         };
@@ -80,8 +81,10 @@ impl Commands {
                         schedule: schedule.clone(),
                         made,
                         user: user.id.clone(),
+                        asked_in: message.link(),
                         expires: stint.expires,
                     });
+                    self.tell_who_asked();
                     made_on_some_schedule.push(kind);
                     on_it(id, roster, kind)
                 }

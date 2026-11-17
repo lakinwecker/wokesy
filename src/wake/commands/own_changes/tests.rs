@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use tokio::sync::watch;
 use wiremock::ResponseTemplate;
 
 use super::*;
@@ -745,5 +746,54 @@ async fn a_custom_shift_that_was_refused_is_not_on_record() {
     assert_eq!(
         requests_after_waking(&answering).await,
         Vec::<String>::new()
+    );
+}
+
+#[tokio::test]
+async fn who_asked_in_which_message_is_told_for_each_change_on_record_and_withdrawn_once_it_ended()
+{
+    let mut answering = alice_and_bob_woken_on_both_rotas().await;
+    let asked = answering.commands.asked();
+    let told = |asked: &watch::Receiver<Vec<Asked>>| -> Vec<(String, String, String)> {
+        asked
+            .borrow()
+            .iter()
+            .map(|asked| {
+                (
+                    asked.user.to_string(),
+                    asked.schedule.to_string(),
+                    asked.in_message.in_chat(),
+                )
+            })
+            .collect()
+    };
+    let from = || "#**sysadmin>incident@1**".to_owned();
+    let told_before = told(&asked);
+    answering
+        .deletes_overrides(FISHNET_OVERRIDES, &["PQALICE"])
+        .await;
+    answering
+        .deletes_overrides(PRIMARY_OVERRIDES, &["PRALICE"])
+        .await;
+
+    answering
+        .acknowledged(&in_sysadmin(ALICE, "stop waking me"))
+        .await;
+
+    assert_eq!(
+        told_before,
+        [
+            ("PALICE1".to_owned(), "PFISHNT".to_owned(), from()),
+            ("PALICE1".to_owned(), "PI7DH85".to_owned(), from()),
+            ("PBOB001".to_owned(), "PFISHNT".to_owned(), from()),
+            ("PBOB001".to_owned(), "PI7DH85".to_owned(), from()),
+        ]
+    );
+    assert_eq!(
+        told(&asked),
+        [
+            ("PBOB001".to_owned(), "PFISHNT".to_owned(), from()),
+            ("PBOB001".to_owned(), "PI7DH85".to_owned(), from()),
+        ]
     );
 }

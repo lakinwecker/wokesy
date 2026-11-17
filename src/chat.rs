@@ -12,6 +12,6 @@ pub use conversation::{ChannelName, ChatUserId, Conversation, TopicName, TopicNa
 pub use duration::{in_one_unit, in_words};
 pub use incoming::{CommandText, IncomingMessage};
 pub use markup::{silenced, time_tag};
-pub use message::MessageId;
+pub use message::{MessageId, MessageLink};
 pub use messenger::{DeliveryError, Messenger};
 pub use outgoing::OutgoingMessage;

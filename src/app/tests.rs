@@ -275,9 +275,10 @@ async fn wake_me_overrides_the_configured_schedule_gets_a_check_mark_and_the_cha
 
 ```spoiler changes
 **Lichess · Level 1**
-- @_**|{ALICE}** until <time:{until}>
+- @_**|{ALICE}** until <time:{until}>, from #**sysadmin>incident@{}**
 - was: @_**|{BOB}**
-```"
+```",
+            wake_me.0
         )
     );
     let overridden = asked.iter().position(|asked| asked == created).unwrap();
@@ -295,7 +296,7 @@ async fn on_a_shift_based_schedule_wake_me_adds_a_custom_shift_and_stop_waking_m
     let mut answers = wokesy.zulip.posts_in(incident_topic());
     assert_eq!(announcements.next().await, on_call_now(&wokesy.pagerduty));
 
-    wokesy
+    let wake_me = wokesy
         .zulip
         .mention(ALICE, SYSADMIN, "incident", "wake me for 4 hours");
     let woken = answers.next().await;
@@ -344,10 +345,11 @@ async fn on_a_shift_based_schedule_wake_me_adds_a_custom_shift_and_stop_waking_m
 
 ```spoiler changes
 **Lichess · Level 1**
-- @_**|{ALICE}** until <time:{until}>
+- @_**|{ALICE}** until <time:{until}>, from #**sysadmin>incident@{}**
 - @_**|{BOB}** until <time:{bob_until}>
 - was: @_**|{BOB}**
-```"
+```",
+            wake_me.0
         )
     );
     assert_eq!(stopped, check_mark_on(stop_waking_me));

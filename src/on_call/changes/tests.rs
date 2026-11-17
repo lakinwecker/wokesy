@@ -35,6 +35,7 @@ fn change<'a>(
     Change {
         policy,
         level: EscalationLevel::new(level),
+        schedules: &[],
         on_call,
         was_on_call,
     }
