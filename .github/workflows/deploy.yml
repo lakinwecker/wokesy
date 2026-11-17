@@ -15,7 +15,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       packages: read
@@ -23,7 +23,7 @@ jobs:
       group: production-deploy
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
       - uses: ./.github/actions/release-tools

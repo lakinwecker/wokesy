@@ -8,12 +8,12 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
 
       - name: Install devenv
@@ -41,11 +41,11 @@ jobs:
         run: devenv shell -- bash -c 'render-manifests | kubeconform -strict -summary -'
 
   nix:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
       - run: nix flake check --print-build-logs
