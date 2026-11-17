@@ -1,8 +1,9 @@
 use time::OffsetDateTime;
 
+use super::asked::Asked;
 use super::changes::Change;
 use super::roster::{Policy, Roster, Shift};
-use crate::chat::{ChatUserId, in_one_unit, silenced, time_tag};
+use crate::chat::{ChatUserId, MessageLink, in_one_unit, silenced, time_tag};
 use crate::pagerduty::{EscalationLevel, EscalationPolicyName, ScheduleName, UserRef};
 use crate::people::{Directory, Name};
 
@@ -126,13 +127,24 @@ pub fn on_call_changed(
     changes: &[Change<'_>],
     latest: &Roster,
     directory: &Directory,
+    asked: &[Asked],
     now: OffsetDateTime,
 ) -> String {
     let levels = changes.iter().map(|change| {
         let was = format!("was: {}", previously_on_call(change.was_on_call, directory));
-        let lines = on_call(change.on_call, directory)
-            .into_iter()
-            .chain(std::iter::once(was));
+        let now_on_call = change.on_call.iter().map(|shift| {
+            let on_call = on_call_until(shift, directory);
+            match asked_in(shift, change, asked) {
+                Some(message) => format!("{on_call}, from {}", message.in_chat()),
+                None => on_call,
+            }
+        });
+        let lines = if change.on_call.is_empty() {
+            vec![NOBODY.to_owned()]
+        } else {
+            now_on_call.collect()
+        };
+        let lines = lines.into_iter().chain(std::iter::once(was));
         under_its_heading(change.policy, change.level, lines)
     });
     format!(
@@ -192,14 +204,37 @@ fn on_call(shifts: &[Shift], directory: &Directory) -> Vec<String> {
     }
     shifts
         .iter()
-        .map(|shift| {
-            let person = person_in_chat(&shift.user, directory);
-            match shift.ends {
-                Some(ends) => format!("{person} until {}", time_tag(ends)),
-                None => person,
-            }
-        })
+        .map(|shift| on_call_until(shift, directory))
         .collect()
+}
+
+fn on_call_until(shift: &Shift, directory: &Directory) -> String {
+    let person = person_in_chat(&shift.user, directory);
+    match shift.ends {
+        Some(ends) => format!("{person} until {}", time_tag(ends)),
+        None => person,
+    }
+}
+
+fn asked_in<'a>(shift: &Shift, change: &Change<'_>, asked: &'a [Asked]) -> Option<&'a MessageLink> {
+    let was_on_call = change
+        .was_on_call
+        .iter()
+        .any(|was| was.user.id == shift.user.id);
+    if was_on_call {
+        return None;
+    }
+    asked
+        .iter()
+        .rev()
+        .find(|asked| {
+            asked.user == shift.user.id
+                && change
+                    .schedules
+                    .iter()
+                    .any(|schedule| schedule.id == asked.schedule)
+        })
+        .map(|asked| &asked.in_message)
 }
 
 fn previously_on_call(shifts: &[Shift], directory: &Directory) -> String {

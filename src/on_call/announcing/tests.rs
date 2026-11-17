@@ -123,6 +123,7 @@ impl Announcing {
             on_call_topic(),
             rosters,
             directories,
+            watch::channel(Vec::new()).1,
         ));
         Self {
             task,

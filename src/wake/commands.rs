@@ -12,7 +12,7 @@ use tokio::sync::{Notify, watch};
 use super::config::Config;
 use super::parsing::{Command, parse};
 use crate::chat::{ChannelName, Conversation, IncomingMessage, OutgoingMessage};
-use crate::on_call::{Roster, on_call_now};
+use crate::on_call::{Asked, Roster, on_call_now};
 use crate::pagerduty;
 use crate::people::Directory;
 
@@ -57,6 +57,7 @@ pub struct Commands {
     last_page: Option<Paged>,
     own_changes: Vec<OwnChange>,
     shift_based: BTreeSet<pagerduty::ScheduleId>,
+    asked: watch::Sender<Vec<Asked>>,
 }
 
 impl Reply {
@@ -82,7 +83,7 @@ impl Answer {
 
 impl Commands {
     #[must_use]
-    pub const fn new(
+    pub fn new(
         pagerduty: pagerduty::Api,
         events: Option<pagerduty::Events>,
         roster: watch::Receiver<Option<Roster>>,
@@ -102,7 +103,13 @@ impl Commands {
             last_page: None,
             own_changes: Vec::new(),
             shift_based: BTreeSet::new(),
+            asked: watch::Sender::new(Vec::new()),
         }
+    }
+
+    #[must_use]
+    pub fn asked(&self) -> watch::Receiver<Vec<Asked>> {
+        self.asked.subscribe()
     }
 
     /// ```
@@ -171,8 +178,7 @@ impl Commands {
                 Reply::message(STILL_READING)
             }
             (Command::Wake(lasting), Some((roster, directory))) => {
-                self.wake(message.sender, lasting, &roster, &directory)
-                    .await
+                self.wake(message, lasting, &roster, &directory).await
             }
             (Command::Stop, Some((_, directory))) => self.stop(message.sender, &directory).await,
             (Command::Reset, Some((_, directory))) => self.reset(message.sender, &directory).await,

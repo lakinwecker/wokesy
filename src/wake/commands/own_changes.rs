@@ -2,8 +2,8 @@ use reqwest::StatusCode;
 use tokio::time::Instant;
 
 use super::{Commands, Reply, UNKNOWN_SENDER};
-use crate::chat::{ChatUserId, silenced};
-use crate::on_call::{name_in_chat, schedule_in_chat};
+use crate::chat::{ChatUserId, MessageLink, silenced};
+use crate::on_call::{Asked, name_in_chat, schedule_in_chat};
 use crate::pagerduty::{ApiError, CustomShiftId, OverrideId, ScheduleId, ScheduleName, UserId};
 use crate::people::Directory;
 
@@ -38,6 +38,7 @@ pub(super) struct OwnChange {
     pub schedule: WakeSchedule,
     pub made: Made,
     pub user: UserId,
+    pub asked_in: Option<MessageLink>,
     pub expires: Instant,
 }
 
@@ -89,6 +90,22 @@ impl WakeSchedule {
 }
 
 impl Commands {
+    pub(super) fn tell_who_asked(&self) {
+        let asked = self
+            .own_changes
+            .iter()
+            .filter_map(|own| {
+                Some(Asked {
+                    user: own.user.clone(),
+                    schedule: own.schedule.id.clone(),
+                    in_message: own.asked_in.clone()?,
+                    until: own.expires,
+                })
+            })
+            .collect();
+        self.asked.send_replace(asked);
+    }
+
     pub(super) fn forget_expired(&mut self) {
         let now = Instant::now();
         self.own_changes.retain(|own| own.expires > now);
@@ -121,6 +138,7 @@ impl Commands {
                 .into_iter()
                 .partition(chosen);
         self.own_changes = kept;
+        self.tell_who_asked();
         let mut endings = Vec::with_capacity(ending.len());
         for own in ending {
             let kind = own.made.kind();
@@ -146,6 +164,7 @@ impl Commands {
             endings.push(ending);
         }
         if !endings.is_empty() {
+            self.tell_who_asked();
             self.refresh.notify_one();
         }
         endings

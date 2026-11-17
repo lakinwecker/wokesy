@@ -49,6 +49,7 @@ This post is also how wokesy confirms `wake me`, `stop waking me`, and `back to 
 - A level with nobody on call says `nobody`. With the [recommended escalation policy](pagerduty.md#the-escalation-policy), level 1 says that whenever nobody has asked to be woken.
 - The end of a shift is shown to each reader in their own time zone.
 - In the `changes` block, the line that starts with `was:` names the people without the ends of their shifts. It says `was: nobody` for a level that was empty.
+- In the `changes` block, a person whom `wake me` just put on call ends with `from` and a link to the message that asked, such as `- Alice until 16:30, from #sysadmin > incident`. Wokesy links only a person who was not on call at that level before, at a level of a schedule on which it made the override or custom shift, while it still has that on record. After a restart, or once the person's time is up or `stop waking me` ended it, there is no link.
 
 ### What appears, and when
 

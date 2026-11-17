@@ -1,12 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::roster::{Level, Policy, Roster, Shift};
-use crate::pagerduty::{EscalationLevel, EscalationPolicyName, UserId};
+use crate::pagerduty::{EscalationLevel, EscalationPolicyName, ScheduleRef, UserId};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Change<'a> {
     pub policy: &'a EscalationPolicyName,
     pub level: EscalationLevel,
+    pub schedules: &'a [ScheduleRef],
     pub on_call: &'a [Shift],
     pub was_on_call: &'a [Shift],
 }
@@ -24,6 +25,7 @@ pub fn changes<'a>(announced: &'a Roster, latest: &'a Roster) -> Vec<Change<'a>>
             changes.push(Change {
                 policy: &policy.name,
                 level: level.number,
+                schedules: &level.schedules,
                 on_call: &level.shifts,
                 was_on_call,
             });
@@ -35,6 +37,7 @@ pub fn changes<'a>(announced: &'a Roster, latest: &'a Roster) -> Vec<Change<'a>>
             changes.push(Change {
                 policy: &policy.name,
                 level: level.number,
+                schedules: &level.schedules,
                 on_call: &[],
                 was_on_call: &level.shifts,
             });
