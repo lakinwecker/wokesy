@@ -283,8 +283,9 @@ fn a_name_from_pagerduty_that_holds_a_mention_cannot_notify() {
 
 ```spoiler changes
 **Ops @_**Carol Example** · Level 1**
-- nobody
-- was: @_**all**, x @_*sysadmins*
+\\- @_**all**
+\\- x @_*sysadmins*
+\\+ nobody
 ```"
     );
 }
@@ -311,15 +312,14 @@ fn a_change_is_a_line_of_who_is_alerted_first_now_and_the_hidden_levels_that_cha
 
 ```spoiler changes
 **Lichess · Level 2**
-- @_**|13** until <time:2026-11-14T20:00:00Z>
-- Carol Example
-- was: @_**|13**
+@_**|13** until <time:2026-11-14T20:00:00Z>
+\\+ Carol Example
 ```"
     );
 }
 
 #[test]
-fn a_change_lists_everyone_who_was_on_call_without_their_shift_ends() {
+fn a_change_marks_who_left_with_a_minus_and_who_joined_with_a_plus() {
     let announced = lichess(&[
         until_the_evening(alice()),
         until_the_evening(bob()),
@@ -334,8 +334,9 @@ fn a_change_lists_everyone_who_was_on_call_without_their_shift_ends() {
 
 ```spoiler changes
 **Lichess · Level 1**
-- Carol Example
-- was: @_**|12**, @_**|13**, Carol Example
+\\- @_**|12**
+\\- @_**|13**
+Carol Example
 ```"
     );
 }
@@ -360,12 +361,12 @@ fn a_change_from_nobody_and_a_change_to_nobody_say_so() {
 
 ```spoiler changes
 **Lichess · Level 1**
-- @_**|12** until <time:2026-11-14T20:00:00Z>
-- was: nobody
+\\- nobody
+\\+ @_**|12** until <time:2026-11-14T20:00:00Z>
 
 **Lichess · Level 2**
-- nobody
-- was: @_**|13**
+\\- @_**|13**
+\\+ nobody
 ```"
     );
 }
@@ -384,7 +385,8 @@ fn asked(user: &UserRef, schedule: &str, message: u64) -> Asked {
 }
 
 #[test]
-fn a_person_newly_on_call_on_a_schedule_they_asked_for_is_linked_to_the_message_that_asked() {
+fn a_person_newly_on_call_on_a_schedule_they_asked_for_is_linked_to_the_message_that_asked_above_the_spoiler()
+ {
     let on_the_primary_rota = |shifts: &[Shift]| Level {
         schedules: vec![schedule("PPRIMAR", "Primary rota")],
         ..level(1, shifts)
@@ -419,16 +421,16 @@ fn a_person_newly_on_call_on_a_schedule_they_asked_for_is_linked_to_the_message_
         ),
         "\
 :pager: **On call changed:** @_**|12** for 4 hours, @_**|13**
+#**sysadmin>incident@42**
 
 ```spoiler changes
 **Lichess · Level 1**
-- @_**|12** until <time:2026-11-14T20:00:00Z>, from #**sysadmin>incident@42**
-- @_**|13**
-- was: @_**|13**
+\\+ @_**|12** until <time:2026-11-14T20:00:00Z>
+@_**|13**
 
 **Lichess · Level 2**
-- Carol Example
-- was: nobody
+\\- nobody
+\\+ Carol Example
 ```"
     );
 }

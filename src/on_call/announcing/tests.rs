@@ -7,9 +7,11 @@ use tokio::task::JoinHandle;
 use tokio::time::Instant;
 
 use super::*;
-use crate::chat::{ChannelName, DeliveryError, TopicName, time_tag};
+use crate::chat::{ChannelName, DeliveryError, MessageId, MessageLink, TopicName, time_tag};
+use crate::on_call::Level;
 use crate::on_call::Shift;
-use crate::on_call::testing::{directory, level, policy, roster, shift, user};
+use crate::on_call::testing::{directory, level, policy, roster, schedule, shift, user};
+use crate::pagerduty::ScheduleId;
 
 const PATIENCE: Duration = Duration::from_mins(1);
 const A_LONG_TIME: Duration = Duration::from_hours(1);
@@ -104,6 +106,7 @@ struct Announcing {
     task: JoinHandle<()>,
     roster: watch::Sender<Option<Roster>>,
     directory: watch::Sender<Option<Directory>>,
+    asked: watch::Sender<Vec<Asked>>,
     attempts: mpsc::UnboundedReceiver<Attempt>,
     unreachable: Arc<AtomicBool>,
 }
@@ -118,17 +121,19 @@ impl Announcing {
         };
         let (roster, rosters) = watch::channel(roster);
         let (directory, directories) = watch::channel(directory);
+        let (asked, asks) = watch::channel(Vec::new());
         let task = tokio::spawn(keep_announcing(
             messenger,
             on_call_topic(),
             rosters,
             directories,
-            watch::channel(Vec::new()).1,
+            asks,
         ));
         Self {
             task,
             roster,
             directory,
+            asked,
             attempts,
             unreachable,
         }
@@ -247,8 +252,8 @@ async fn a_later_change_announces_only_the_levels_that_changed() {
 
 ```spoiler changes
 **Lichess · Level 1**
-- @_**|12** until {}
-- was: @_**|13**
+\\- @_**|13**
+\\+ @_**|12** until {}
 ```",
             this_evening()
         )
@@ -273,8 +278,8 @@ async fn each_change_is_announced_against_the_roster_announced_before_it() {
 
 ```spoiler changes
 **Lichess · Level 2**
-- @_**|12** until {}
-- was: Carol Example
+\\- Carol Example
+\\+ @_**|12** until {}
 ```",
             this_evening()
         )
@@ -301,8 +306,8 @@ async fn a_roster_with_the_same_people_on_call_announces_nothing() {
 
 ```spoiler changes
 **Lichess · Level 2**
-- Carol Example
-- was: @_**|13**
+\\- @_**|13**
+\\+ Carol Example
 ```"
     );
 }
@@ -325,8 +330,8 @@ async fn a_change_is_announced_with_the_people_matched_by_then() {
 
 ```spoiler changes
 **Lichess · Level 1**
-- @_**|14**
-- was: @_**|12**
+\\- @_**|12**
+\\+ @_**|14**
 ```"
     );
 }
@@ -383,8 +388,8 @@ async fn a_roster_counts_as_announced_only_once_its_announcement_was_delivered()
 
 ```spoiler changes
 **Lichess · Level 1**
-- Carol Example
-- was: @_**|12**
+\\- @_**|12**
+\\+ Carol Example
 ```"
     );
     announcing.announces_nothing().await;
@@ -431,5 +436,54 @@ async fn announcing_ends_when_people_will_never_be_matched() {
     assert_eq!(
         announcing.attempts.try_recv(),
         Err(TryRecvError::Disconnected)
+    );
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_change_names_who_asked_in_which_message_only_while_the_ask_lasts() {
+    let mut announcing = Announcing::knowing_everyone(lichess(&[], &[]));
+    announcing.next_announcement().await;
+    let on_the_primary_rota = |shifts: &[Shift]| {
+        roster(&[policy(
+            "PLICHES",
+            "Lichess",
+            &[Level {
+                schedules: vec![schedule("PPRIMAR", "Primary rota")],
+                ..level(1, shifts)
+            }],
+        )])
+    };
+    let asked = |user: &Shift, message: u64, lasting: Duration| Asked {
+        user: user.user.id.clone(),
+        schedule: ScheduleId::try_new("PPRIMAR").unwrap(),
+        in_message: MessageLink {
+            channel: ChannelName::try_new("sysadmin").unwrap(),
+            topic: TopicName::try_new("incident").unwrap(),
+            id: MessageId(message),
+        },
+        until: Instant::now() + lasting,
+    };
+    announcing.asked.send_replace(vec![
+        asked(&alice(), 41, A_LONG_TIME),
+        asked(&bob(), 42, Duration::ZERO),
+    ]);
+
+    announcing.becomes(on_the_primary_rota(&[alice(), bob()]));
+
+    assert_eq!(
+        announcing.next_announcement().await,
+        format!(
+            "\
+:pager: **On call changed:** @_**|12** for 4 hours, @_**|13**
+#**sysadmin>incident@41**
+
+```spoiler changes
+**Lichess · Level 1**
+\\- nobody
+\\+ @_**|12** until {}
+\\+ @_**|13**
+```",
+            this_evening()
+        )
     );
 }

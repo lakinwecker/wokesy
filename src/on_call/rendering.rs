@@ -15,6 +15,9 @@ const NOBODY_TO_ALERT: &str = ":warning: nobody";
 const NOBODY: &str = "nobody";
 const SCHEDULE: &str = "schedule";
 const CHANGES: &str = "changes";
+const REMOVED: &str = "\\- ";
+const ADDED: &str = "\\+ ";
+const KEPT: &str = "";
 const BETWEEN_PEOPLE: &str = ", ";
 const BETWEEN_LEVELS: &str = "\n\n";
 
@@ -112,7 +115,7 @@ pub fn on_call_now(roster: &Roster, directory: &Directory, now: OffsetDateTime) 
             under_its_heading(
                 &policy.name,
                 level.number,
-                on_call(&level.shifts, directory),
+                &as_a_list(&on_call(&level.shifts, directory)),
             )
         })
     });
@@ -130,28 +133,71 @@ pub fn on_call_changed(
     asked: &[Asked],
     now: OffsetDateTime,
 ) -> String {
-    let levels = changes.iter().map(|change| {
-        let was = format!("was: {}", previously_on_call(change.was_on_call, directory));
-        let now_on_call = change.on_call.iter().map(|shift| {
-            let on_call = on_call_until(shift, directory);
-            match asked_in(shift, change, asked) {
-                Some(message) => format!("{on_call}, from {}", message.in_chat()),
-                None => on_call,
-            }
-        });
-        let lines = if change.on_call.is_empty() {
-            vec![NOBODY.to_owned()]
-        } else {
-            now_on_call.collect()
-        };
-        let lines = lines.into_iter().chain(std::iter::once(was));
-        under_its_heading(change.policy, change.level, lines)
-    });
+    let levels = changes
+        .iter()
+        .map(|change| under_its_heading(change.policy, change.level, &signed(change, directory)));
+    let asked_lines: Vec<String> = asked_in_messages(changes, asked)
+        .into_iter()
+        .map(|message| format!("\n{}", message.in_chat()))
+        .collect();
+    let asked_lines = asked_lines.concat();
     format!(
-        "{ON_CALL_CHANGED} {}\n\n{}",
+        "{ON_CALL_CHANGED} {}{asked_lines}\n\n{}",
         alerted_first(latest, directory, now),
         hidden_under(CHANGES, levels)
     )
+}
+
+fn signed(change: &Change<'_>, directory: &Directory) -> String {
+    let on_call_now = |user: &UserRef| change.on_call.iter().any(|shift| shift.user.id == user.id);
+    let was_on_call = |user: &UserRef| {
+        change
+            .was_on_call
+            .iter()
+            .any(|shift| shift.user.id == user.id)
+    };
+    let removed = change
+        .was_on_call
+        .iter()
+        .filter(|shift| !on_call_now(&shift.user))
+        .map(|shift| format!("{REMOVED}{}", person_in_chat(&shift.user, directory)));
+    let current = change.on_call.iter().map(|shift| {
+        let sign = if was_on_call(&shift.user) {
+            KEPT
+        } else {
+            ADDED
+        };
+        format!("{sign}{}", on_call_until(shift, directory))
+    });
+    let from_nobody = change
+        .was_on_call
+        .is_empty()
+        .then(|| format!("{REMOVED}{NOBODY}"));
+    let to_nobody = change
+        .on_call
+        .is_empty()
+        .then(|| format!("{ADDED}{NOBODY}"));
+    from_nobody
+        .into_iter()
+        .chain(removed)
+        .chain(current)
+        .chain(to_nobody)
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn asked_in_messages<'a>(changes: &[Change<'a>], asked: &'a [Asked]) -> Vec<&'a MessageLink> {
+    let mut messages: Vec<&MessageLink> = Vec::new();
+    for change in changes {
+        for shift in change.on_call {
+            if let Some(message) = asked_in(shift, change, asked)
+                && !messages.contains(&message)
+            {
+                messages.push(message);
+            }
+        }
+    }
+    messages
 }
 
 fn alerted_first(roster: &Roster, directory: &Directory, now: OffsetDateTime) -> String {
@@ -186,14 +232,15 @@ fn hidden_under(header: &str, levels: impl IntoIterator<Item = String>) -> Strin
     format!("```spoiler {header}\n{levels}\n```")
 }
 
-fn under_its_heading(
-    policy: &EscalationPolicyName,
-    level: EscalationLevel,
-    lines: impl IntoIterator<Item = String>,
-) -> String {
+fn under_its_heading(policy: &EscalationPolicyName, level: EscalationLevel, body: &str) -> String {
     let heading = bold(&format!("{} · Level {level}", policy.as_str()));
-    std::iter::once(heading)
-        .chain(lines.into_iter().map(|line| format!("- {line}")))
+    format!("{heading}\n{body}")
+}
+
+fn as_a_list(lines: &[String]) -> String {
+    lines
+        .iter()
+        .map(|line| format!("- {line}"))
         .collect::<Vec<_>>()
         .join("\n")
 }
@@ -235,17 +282,6 @@ fn asked_in<'a>(shift: &Shift, change: &Change<'_>, asked: &'a [Asked]) -> Optio
                     .any(|schedule| schedule.id == asked.schedule)
         })
         .map(|asked| &asked.in_message)
-}
-
-fn previously_on_call(shifts: &[Shift], directory: &Directory) -> String {
-    if shifts.is_empty() {
-        return NOBODY.to_owned();
-    }
-    shifts
-        .iter()
-        .map(|shift| person_in_chat(&shift.user, directory))
-        .collect::<Vec<_>>()
-        .join(BETWEEN_PEOPLE)
 }
 
 #[cfg(test)]

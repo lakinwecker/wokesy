@@ -25,15 +25,16 @@ Infrastructure · Level 3
 - Carol until 09:00
 ```
 
-After that, it posts only when the set of people on call at some level changes. The first line names the people whom PagerDuty would alert first now, also when the level that changed is another one. The block is named `changes`. It shows only the levels that changed, and the last line of each level says who was on call there before:
+After that, it posts only when the set of people on call at some level changes. The first line names the people whom PagerDuty would alert first now, also when the level that changed is another one. When `wake me` put someone on call, the next line is a link to the message that asked. The block is named `changes`. It shows only the levels that changed, marking who left with `-` and who joined with `+`:
 
 ```
 On call changed: Alice for 30 minutes
+#sysadmin > incident
 
 changes
 Infrastructure · Level 1
-- Alice until 16:30
-- was: nobody
+- nobody
++ Alice until 16:30
 ```
 
 This post is also how wokesy confirms `wake me`, `stop waking me`, and `back to defaults`. Wokesy answers those commands with [a check mark](commands.md#a-check-mark-instead-of-a-reply) on the sender's message and no reply, so the sender finds the result here, in the on-call topic. When the command did not change the set of people on call, wokesy posts nothing here, and the check mark is the only sign.
@@ -48,8 +49,11 @@ This post is also how wokesy confirms `wake me`, `stop waking me`, and `back to 
 
 - A level with nobody on call says `nobody`. With the [recommended escalation policy](pagerduty.md#the-escalation-policy), level 1 says that whenever nobody has asked to be woken.
 - The end of a shift is shown to each reader in their own time zone.
-- In the `changes` block, the line that starts with `was:` names the people without the ends of their shifts. It says `was: nobody` for a level that was empty.
-- In the `changes` block, a person whom `wake me` just put on call ends with `from` and a link to the message that asked, such as `- Alice until 16:30, from #sysadmin > incident`. Wokesy links only a person who was not on call at that level before, at a level of a schedule on which it made the override or custom shift, while it still has that on record. After a restart, or once the person's time is up or `stop waking me` ended it, there is no link.
+- In the `changes` block, a line that starts with `-` is a person who left the level, a line that starts with `+` a person who joined it, and a line without a sign a person who stayed. `- nobody` says the level was empty, and `+ nobody` that it is empty now. A person who is on call now has the end of their shift.
+
+### Who asked
+
+Under the first line, wokesy links to each message whose `wake me` just put someone on call, one link per line, such as `#sysadmin > incident`. A link counts only for a person who was not on call at that level before, at a level of a schedule on which it made the override or custom shift, while it still has that on record. After a restart, or once the person's time is up or `stop waking me` ended it, there is no link.
 
 ### What appears, and when
 
