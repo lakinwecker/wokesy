@@ -41,7 +41,7 @@ This post is also how wokesy confirms `wake me`, `stop waking me`, and `back to 
 ### The first line
 
 - **Who is named.** PagerDuty skips a level that has nobody on call. So for each escalation policy, wokesy names the people at the first level that has anybody. In the roster above, that is level 2. Wokesy names a person once, even when several policies would alert them first.
-- **The time left.** Wokesy gives the time that was left on the shift when it wrote the message, as one unit, rounded down: `45 minutes`, `4 hours`, `2 days`, `2 weeks`, `3 months`, or `1 year`. It never says less than `1 minute`. A shift without an end, such as that of a person whom the escalation policy names directly, has no time after the name.
+- **The time left.** Wokesy gives the time that was left on the shift when it wrote the message, as one unit: `45 minutes`, `4 hours`, `2 days`, `2 weeks`, `3 months`, or `1 year`. It adds 90 seconds and then rounds down, because wokesy reads who is on call once a minute and may write the message a little after the shift began: with 2 hours 59 minutes left it says `3 hours`. It never says less than `1 minute`. A shift without an end, such as that of a person whom the escalation policy names directly, has no time after the name.
 - **Nobody at all.** When nobody is on call at any level of any policy that wokesy shows, the first line is `On call now: nobody`, with a warning sign before `nobody`. `On call changed: nobody` has the same sign.
 
 ### The block
