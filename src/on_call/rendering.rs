@@ -15,8 +15,9 @@ const NOBODY_TO_ALERT: &str = ":warning: nobody";
 const NOBODY: &str = "nobody";
 const SCHEDULE: &str = "schedule";
 const CHANGES: &str = "changes";
-const REMOVED: &str = "\\- ";
-const ADDED: &str = "\\+ ";
+const REMOVED: &str = "&#45; ";
+const ADDED: &str = "&#43; ";
+const FROM: &str = " · ";
 const KEPT: &str = "";
 const BETWEEN_PEOPLE: &str = ", ";
 const BETWEEN_LEVELS: &str = "\n\n";
@@ -138,7 +139,7 @@ pub fn on_call_changed(
         .map(|change| under_its_heading(change.policy, change.level, &signed(change, directory)));
     let asked_lines: Vec<String> = asked_in_messages(changes, asked)
         .into_iter()
-        .map(|message| format!("\n{}", message.in_chat()))
+        .map(|message| format!("{FROM}{}", message.in_chat()))
         .collect();
     let asked_lines = asked_lines.concat();
     format!(

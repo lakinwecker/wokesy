@@ -271,13 +271,12 @@ async fn wake_me_overrides_the_configured_schedule_gets_a_check_mark_and_the_cha
         announced,
         format!(
             "\
-:pager: **On call changed:** @_**|{ALICE}** for 4 hours
-#**sysadmin>incident@{}**
+:pager: **On call changed:** @_**|{ALICE}** for 4 hours · #**sysadmin>incident@{}**
 
 ```spoiler changes
 **Lichess · Level 1**
-\\- @_**|{BOB}**
-\\+ @_**|{ALICE}** until <time:{until}>
+&#45; @_**|{BOB}**
+&#43; @_**|{ALICE}** until <time:{until}>
 ```",
             wake_me.0
         )
@@ -342,12 +341,11 @@ async fn on_a_shift_based_schedule_wake_me_adds_a_custom_shift_and_stop_waking_m
         added,
         format!(
             "\
-:pager: **On call changed:** @_**|{ALICE}** for 4 hours, @_**|{BOB}** for 4 hours
-#**sysadmin>incident@{}**
+:pager: **On call changed:** @_**|{ALICE}** for 4 hours, @_**|{BOB}** for 4 hours · #**sysadmin>incident@{}**
 
 ```spoiler changes
 **Lichess · Level 1**
-\\+ @_**|{ALICE}** until <time:{until}>
+&#43; @_**|{ALICE}** until <time:{until}>
 @_**|{BOB}** until <time:{bob_until}>
 ```",
             wake_me.0
@@ -367,7 +365,7 @@ async fn on_a_shift_based_schedule_wake_me_adds_a_custom_shift_and_stop_waking_m
 
 ```spoiler changes
 **Lichess · Level 1**
-\\- @_**|{ALICE}**
+&#45; @_**|{ALICE}**
 @_**|{BOB}** until <time:{bob_until}>
 ```"
         )

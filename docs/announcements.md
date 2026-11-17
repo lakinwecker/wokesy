@@ -25,11 +25,10 @@ Infrastructure · Level 3
 - Carol until 09:00
 ```
 
-After that, it posts only when the set of people on call at some level changes. The first line names the people whom PagerDuty would alert first now, also when the level that changed is another one. When `wake me` put someone on call, the next line is a link to the message that asked. The block is named `changes`. It shows only the levels that changed, marking who left with `-` and who joined with `+`:
+After that, it posts only when the set of people on call at some level changes. The first line names the people whom PagerDuty would alert first now, also when the level that changed is another one. When `wake me` put someone on call, the first line ends with a link to the message that asked. The block is named `changes`. It shows only the levels that changed, marking who left with `-` and who joined with `+`:
 
 ```
-On call changed: Alice for 30 minutes
-#sysadmin > incident
+On call changed: Alice for 30 minutes · #sysadmin > incident
 
 changes
 Infrastructure · Level 1
@@ -53,7 +52,7 @@ This post is also how wokesy confirms `wake me`, `stop waking me`, and `back to 
 
 ### Who asked
 
-Under the first line, wokesy links to each message whose `wake me` just put someone on call, one link per line, such as `#sysadmin > incident`. A link counts only for a person who was not on call at that level before, at a level of a schedule on which it made the override or custom shift, while it still has that on record. After a restart, or once the person's time is up or `stop waking me` ended it, there is no link.
+At the end of the first line, after ` · `, wokesy links to each message whose `wake me` just put someone on call, such as `#sysadmin > incident`. A link counts only for a person who was not on call at that level before, at a level of a schedule on which it made the override or custom shift, while it still has that on record. After a restart, or once the person's time is up or `stop waking me` ended it, there is no link.
 
 ### What appears, and when
 

@@ -252,8 +252,8 @@ async fn a_later_change_announces_only_the_levels_that_changed() {
 
 ```spoiler changes
 **Lichess · Level 1**
-\\- @_**|13**
-\\+ @_**|12** until {}
+&#45; @_**|13**
+&#43; @_**|12** until {}
 ```",
             this_evening()
         )
@@ -278,8 +278,8 @@ async fn each_change_is_announced_against_the_roster_announced_before_it() {
 
 ```spoiler changes
 **Lichess · Level 2**
-\\- Carol Example
-\\+ @_**|12** until {}
+&#45; Carol Example
+&#43; @_**|12** until {}
 ```",
             this_evening()
         )
@@ -306,8 +306,8 @@ async fn a_roster_with_the_same_people_on_call_announces_nothing() {
 
 ```spoiler changes
 **Lichess · Level 2**
-\\- @_**|13**
-\\+ Carol Example
+&#45; @_**|13**
+&#43; Carol Example
 ```"
     );
 }
@@ -330,8 +330,8 @@ async fn a_change_is_announced_with_the_people_matched_by_then() {
 
 ```spoiler changes
 **Lichess · Level 1**
-\\- @_**|12**
-\\+ @_**|14**
+&#45; @_**|12**
+&#43; @_**|14**
 ```"
     );
 }
@@ -388,8 +388,8 @@ async fn a_roster_counts_as_announced_only_once_its_announcement_was_delivered()
 
 ```spoiler changes
 **Lichess · Level 1**
-\\- @_**|12**
-\\+ Carol Example
+&#45; @_**|12**
+&#43; Carol Example
 ```"
     );
     announcing.announces_nothing().await;
@@ -474,14 +474,13 @@ async fn a_change_names_who_asked_in_which_message_only_while_the_ask_lasts() {
         announcing.next_announcement().await,
         format!(
             "\
-:pager: **On call changed:** @_**|12** for 4 hours, @_**|13**
-#**sysadmin>incident@41**
+:pager: **On call changed:** @_**|12** for 4 hours, @_**|13** · #**sysadmin>incident@41**
 
 ```spoiler changes
 **Lichess · Level 1**
-\\- nobody
-\\+ @_**|12** until {}
-\\+ @_**|13**
+&#45; nobody
+&#43; @_**|12** until {}
+&#43; @_**|13**
 ```",
             this_evening()
         )

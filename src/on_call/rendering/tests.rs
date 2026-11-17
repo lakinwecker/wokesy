@@ -283,9 +283,9 @@ fn a_name_from_pagerduty_that_holds_a_mention_cannot_notify() {
 
 ```spoiler changes
 **Ops @_**Carol Example** · Level 1**
-\\- @_**all**
-\\- x @_*sysadmins*
-\\+ nobody
+&#45; @_**all**
+&#45; x @_*sysadmins*
+&#43; nobody
 ```"
     );
 }
@@ -313,7 +313,7 @@ fn a_change_is_a_line_of_who_is_alerted_first_now_and_the_hidden_levels_that_cha
 ```spoiler changes
 **Lichess · Level 2**
 @_**|13** until <time:2026-11-14T20:00:00Z>
-\\+ Carol Example
+&#43; Carol Example
 ```"
     );
 }
@@ -334,8 +334,8 @@ fn a_change_marks_who_left_with_a_minus_and_who_joined_with_a_plus() {
 
 ```spoiler changes
 **Lichess · Level 1**
-\\- @_**|12**
-\\- @_**|13**
+&#45; @_**|12**
+&#45; @_**|13**
 Carol Example
 ```"
     );
@@ -361,12 +361,12 @@ fn a_change_from_nobody_and_a_change_to_nobody_say_so() {
 
 ```spoiler changes
 **Lichess · Level 1**
-\\- nobody
-\\+ @_**|12** until <time:2026-11-14T20:00:00Z>
+&#45; nobody
+&#43; @_**|12** until <time:2026-11-14T20:00:00Z>
 
 **Lichess · Level 2**
-\\- @_**|13**
-\\+ nobody
+&#45; @_**|13**
+&#43; nobody
 ```"
     );
 }
@@ -420,17 +420,16 @@ fn a_person_newly_on_call_on_a_schedule_they_asked_for_is_linked_to_the_message_
             NOW,
         ),
         "\
-:pager: **On call changed:** @_**|12** for 4 hours, @_**|13**
-#**sysadmin>incident@42**
+:pager: **On call changed:** @_**|12** for 4 hours, @_**|13** · #**sysadmin>incident@42**
 
 ```spoiler changes
 **Lichess · Level 1**
-\\+ @_**|12** until <time:2026-11-14T20:00:00Z>
+&#43; @_**|12** until <time:2026-11-14T20:00:00Z>
 @_**|13**
 
 **Lichess · Level 2**
-\\- nobody
-\\+ Carol Example
+&#45; nobody
+&#43; Carol Example
 ```"
     );
 }
