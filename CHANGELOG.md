@@ -4,6 +4,13 @@ Rendered by [git-cliff](https://git-cliff.org) from the conventional commits
 behind each tag. `release` rewrites this file in full on every release, so an
 edit made here is lost — edit the commit messages instead.
 
+## v0.4.3 — 2026-11-17
+
+### Tooling
+
+- **deploy**: deploy production 0.4.2 ([dc8b30b](https://github.com/lakinwecker/wokesy/commit/dc8b30bbfb070144d31a653f9a08019db4a2b5c3))
+- upgrade github workflow machines ([9db2878](https://github.com/lakinwecker/wokesy/commit/9db28784c0bd053a2e494dbf148830fe91397a36))
+
 ## v0.4.2 — 2026-11-17
 
 ### Tooling
